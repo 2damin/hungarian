@@ -24,8 +24,8 @@ void dumpmat(int n, int m, std::vector<float>& mat)
 int main(int argc, char** argv)
 {
     std::cout << "Hungarian Algorithm" << std::endl;
-    int n = 10;
-    int m = 10;
+    int n = 7;
+    int m = 6;
 
     Hungarian hu;
 
