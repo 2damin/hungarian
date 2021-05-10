@@ -1,44 +1,41 @@
 #include <iostream>
-#include <vector>
 #include <time.h>
+#include <vector>
 
 #include "hungarian.hpp"
 
-void genmat(int n, int m, std::vector<float>& mat)
-{
-    srand(time(0));
-    mat.resize(n * m);
-    for (int i=0; i < mat.size(); i++) mat[i] = rand() % 100;
+void genmat(int n, int m, std::vector<float> &mat) {
+  srand(time(0));
+  mat.resize(n * m);
+  for (int i = 0; i < mat.size(); i++)
+    mat[i] = rand() % 100;
 }
 
-void dumpmat(int n, int m, std::vector<float>& mat)
-{
-    for (int i=0; i<n; i++)
-    {
-        for (int j=0; j<m; j++)
-            printf("%f ", mat[i * m + j]);
-        printf("\n");
-    }
+void dumpmat(int n, int m, std::vector<float> &mat) {
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < m; j++)
+      printf("%f ", mat[i * m + j]);
+    printf("\n");
+  }
 }
 
-int main(int argc, char** argv)
-{
-    std::cout << "Hungarian Algorithm" << std::endl;
-    int n = 7;
-    int m = 6;
+int main(int argc, char **argv) {
+  std::cout << "Hungarian Algorithm" << std::endl;
+  int n = 4;
+  int m = 6;
 
-    Hungarian hu;
+  Hungarian hu;
 
-    std::vector<float> costMat;
-    std::vector<float> assignment_idx;
+  std::vector<float> costMat;
+  std::vector<float> assignment_idx;
 
-    genmat(n,m,costMat);
+  genmat(n, m, costMat);
 
-    dumpmat(n,m,costMat);
+  dumpmat(n, m, costMat);
 
-    const float* costMatPtr = &costMat[0];
+  const float *costMatPtr = &costMat[0];
 
-    hu.solve(&costMatPtr, n, m, 0, &assignment_idx[0]);
+  hu.solve(&costMatPtr, n, m, 0, &assignment_idx[0]);
 
-    return 0;
+  return 0;
 }
