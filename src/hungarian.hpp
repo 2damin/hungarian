@@ -18,7 +18,7 @@ public:
 
   // MODE0 is maximum, MODE1 is minimum
   float solve(const float **cost, const int N, const int M, const int _MODE,
-              float *assignment_index);
+              std::vector<float> &assignment_index);
 
 private:
   int step1();
@@ -29,7 +29,8 @@ private:
 
   int step4();
 
-  int step5(const float **cost, float *score, float **assignment_idx);
+  int step5(const float **cost, float *score,
+            std::vector<float> *assignment_idx);
 };
 
 #endif //_hungarian_hpp_
