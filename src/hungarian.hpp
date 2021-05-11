@@ -7,7 +7,6 @@ class Hungarian {
   std::vector<bool> lx_mask, ly_mask;
   std::vector<float> matrix;
   std::vector<bool> mask_matrix;
-  int matched_jobs;
   std::vector<int> alter_paths;
   int MODE;
   int N, M, max_NM;
