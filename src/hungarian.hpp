@@ -13,13 +13,13 @@ class Hungarian {
   int N, M, max_NM;
 
 public:
-  void init(const float **cost, const int _N, const int _M);
-
-  // MODE0 is maximum, MODE1 is minimum
+  // MODE0 is minimize total cost, MODE1 is maximize total cost
   float solve(const float **cost, const int N, const int M, const int _MODE,
               std::vector<float> &assignment_index);
 
 private:
+  void init(const float **cost, const int _N, const int _M, const int _MODE);
+
   int step1();
 
   int step2();

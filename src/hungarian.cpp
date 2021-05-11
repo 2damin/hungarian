@@ -5,14 +5,17 @@
 #include <queue>
 #include <vector>
 
-void Hungarian::init(const float **cost, const int _N, const int _M) {
+void Hungarian::init(const float **cost, const int _N, const int _M,
+                     const int _MODE) {
 
   N = _N;
   M = _M;
-
+  MODE = _MODE;
   max_NM = N > M ? N : M;
 
-  // reset mask
+  int mode_type = MODE == 0 ? 1 : -1;
+
+  // reset masks
   lx_mask.resize(max_NM, false);
   ly_mask.resize(max_NM, false);
   mask_matrix.resize(max_NM * max_NM, false);
@@ -22,53 +25,40 @@ void Hungarian::init(const float **cost, const int _N, const int _M) {
     for (int j = 0; j < M; ++j)
       max_value = std::max(max_value, (*cost)[i * M + j]);
 
-  if (MODE == 0) {
-    // resize square matrix
-    if (N != M) {
-      matrix.resize(max_NM * max_NM);
+  // if MODE is minimizing, max_value is max value in matrix.
+  // MODE is maximizing, max_value is min value in matrix.
+  max_value *= mode_type;
+
+  // resize square matrix
+  if (N != M) {
+    matrix.resize(max_NM * max_NM);
+    for (int i = 0; i < N; ++i)
+      for (int j = 0; j < M; ++j)
+        matrix[j + i * max_NM] = (*cost)[j + i * M] * mode_type;
+
+    // fill max value in new element of square matrix
+    for (int i = N; i < max_NM; ++i)
+      for (int j = 0; j < M; ++j)
+        matrix[i * max_NM + j] = max_value;
+    for (int j = M; j < max_NM; ++j)
       for (int i = 0; i < N; ++i)
-        for (int j = 0; j < M; ++j)
-          matrix[j + i * max_NM] = (*cost)[j + i * M];
-
-      // fill max value in new element of square matrix
-      for (int i = N; i < max_NM; ++i)
-        for (int j = 0; j < M; ++j)
-          matrix[i * max_NM + j] = max_value;
-      for (int j = M; j < max_NM; ++j)
-        for (int i = 0; i < N; ++i)
-          matrix[i * max_NM + j] = max_value;
-    } else {
-      matrix.resize(N * M);
-      for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j)
-          matrix[j + i * M] = (*cost)[j + i * M];
-      }
-    }
-
-  } else if (MODE == 1) {
-    max_value *= -1;
-    // resize square matrix
-    if (N != M) {
-      matrix.resize(max_NM * max_NM);
-      for (int i = 0; i < N; ++i)
-        for (int j = 0; j < M; ++j)
-          matrix[j + i * max_NM] = -(*cost)[j + i * M];
-
-      // fill max value in new element of square matrix
-      for (int i = N; i < max_NM; ++i)
-        for (int j = 0; j < M; ++j)
-          matrix[i * max_NM + j] = max_value;
-      for (int j = M; j < max_NM; ++j)
-        for (int i = 0; i < N; ++i)
-          matrix[i * max_NM + j] = max_value;
-    } else {
-      matrix.resize(N * M);
-      for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < M; ++j)
-          matrix[j + i * M] = -(*cost)[j + i * M];
-      }
+        matrix[i * max_NM + j] = max_value;
+  } else {
+    matrix.resize(N * M);
+    for (int i = 0; i < N; ++i) {
+      for (int j = 0; j < M; ++j)
+        matrix[j + i * M] = (*cost)[j + i * M] * mode_type;
     }
   }
+
+  // #ifdef NDEBUG
+  //   std::cout << "--PRINT RESIZED MATRIX--" << std::endl;
+  //   for (int i = 0; i < max_NM; ++i) {
+  //     for (int j = 0; j < max_NM; ++j)
+  //       std::cout << matrix[j + i * max_NM] << " ";
+  //     std::cout << std::endl;
+  //   }
+  // #endif
 
   // check infinity value
   auto inf = std::numeric_limits<double>::infinity();
@@ -88,18 +78,10 @@ void Hungarian::init(const float **cost, const int _N, const int _M) {
   for (auto &m : matrix)
     if (max_elem == inf)
       m = max_elem;
-
-  //   std::cout << "--PRINT RESIZED MATRIX--" << std::endl;
-  //   for (int i = 0; i < max_NM; ++i) {
-  //     for (int j = 0; j < max_NM; ++j)
-  //       std::cout << matrix[j + i * max_NM] << " ";
-  //     std::cout << std::endl;
-  //   }
 }
 
 // columnwise
 int Hungarian::step1() {
-
   for (int i = 0; i < max_NM; ++i) {
     auto minCol = *std::min_element(matrix.begin() + max_NM * i,
                                     matrix.begin() + max_NM * (i + 1));
@@ -225,11 +207,14 @@ bool dfs_zero(int *count, int count_tmp, std::vector<bool> &mask_matrix,
 
 // find zero line
 int Hungarian::step3() {
-  std::cout << "step3" << std::endl;
   int count = 0;
   auto status =
       dfs_zero(&count, 0, mask_matrix, lx_mask, ly_mask, max_NM, max_NM);
-  // std::cout << " Count : " << count << " status : " << status << std::endl;
+
+  // #ifdef DEBUG
+  //   std::cout << "step3" << std::endl;
+  //   std::cout << " Count : " << count << " status : " << status << std::endl;
+  // #endif
 
   if (count != max_NM)
     return 4;
@@ -244,14 +229,16 @@ bool min_comp(float a, float b) {
 }
 
 int Hungarian::step4() {
-  std::cout << "step4" << std::endl;
 
+  // #ifdef DEBUG
+  //   std::cout << "step4" << std::endl;
   //   std::cout << "--PRINT STEP4--" << std::endl;
   //   for (int i = 0; i < max_NM; ++i) {
   //     for (int j = 0; j < max_NM; ++j)
   //       std::cout << matrix[j + i * max_NM] << " ";
   //     std::cout << std::endl;
   //   }
+  // #endif
 
   float delta = *std::max_element(matrix.begin(), matrix.end());
   for (int i = 0; i < max_NM; ++i) {
@@ -261,6 +248,7 @@ int Hungarian::step4() {
     }
   }
 
+  // #ifdef DEBUG
   //   for (int i = 0; i < max_NM; ++i)
   //     std::cout << "xline : " << lx_mask[i] << " ";
   //   std::cout << std::endl;
@@ -268,7 +256,8 @@ int Hungarian::step4() {
   //     std::cout << "yline : " << ly_mask[j] << " ";
   //   std::cout << std::endl;
   //   std::cout << "--------" << std::endl;
-  // std::cout << "delta : " << delta << std::endl;
+  //   std::cout << "delta : " << delta << std::endl;
+  // #endif
 
   std::transform(matrix.begin(), matrix.end(), matrix.begin(),
                  [delta](float c) { return c - delta; });
@@ -278,12 +267,14 @@ int Hungarian::step4() {
       matrix[j + i * max_NM] = std::max(
           0.f, matrix[j + i * max_NM] + delta * (lx_mask[i] + ly_mask[j]));
 
+  // #ifdef DEBUG
   //   std::cout << "--PRINT STEP4 AFTER--" << std::endl;
   //   for (int i = 0; i < max_NM; ++i) {
   //     for (int j = 0; j < max_NM; ++j)
   //       std::cout << matrix[j + i * max_NM] << " ";
   //     std::cout << std::endl;
   //   }
+  // #endif
 
   return 2;
 }
@@ -363,27 +354,26 @@ bool DFS_step5_rowwise(std::vector<float> &mask_matrix,
 
 int Hungarian::step5(const float **cost, float *score,
                      std::vector<float> *assignment_idx) {
-  std::cout << "step5" << std::endl;
+  // #ifdef DEBUG
+  //   std::cout << "step5" << std::endl;
   //   std::cout << "--PRINT STEP5 --" << std::endl;
   //   for (int i = 0; i < max_NM; ++i) {
   //     for (int j = 0; j < max_NM; ++j)
   //       std::cout << matrix[j + i * max_NM] << " ";
   //     std::cout << std::endl;
   //   }
+  // #endif
 
   std::transform(lx_mask.begin(), lx_mask.end(), lx_mask.begin(),
                  [](bool num) { return false; });
   std::transform(ly_mask.begin(), ly_mask.end(), ly_mask.begin(),
                  [](bool num) { return false; });
 
-  // auto m_mask = std::vector<bool>(M, false);s
   std::vector<int> assign_idx;
-  std::cout << "=====COLUMNWISE====" << std::endl;
   auto status = DFS_step5_columnwise(matrix, lx_mask, N, M, 0, assign_idx);
 
   if (!status) {
     assign_idx.clear();
-    std::cout << "=====ROWISE====" << std::endl;
     DFS_step5_rowwise(matrix, ly_mask, N, M, 0, assign_idx);
   }
 
@@ -399,10 +389,8 @@ int Hungarian::step5(const float **cost, float *score,
 
 float Hungarian::solve(const float **cost, const int N, const int M,
                        const int _MODE, std::vector<float> &assignment_index) {
-  std::cout << "solve" << std::endl;
-  MODE = _MODE;
 
-  init(cost, N, M);
+  init(cost, N, M, _MODE);
 
   std::vector<float> assign_idx;
 
