@@ -21,8 +21,9 @@ void dumpmat(int n, int m, std::vector<float> &mat) {
 
 int main(int argc, char **argv) {
   std::cout << "Hungarian Algorithm" << std::endl;
-  int n = 6;
+  int n = 4;
   int m = 4;
+  int MODE = 1; // 0 is minimize, 1 is maximize
 
   int nm_min = n < m ? n : m;
 
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
 
   const float *costMatPtr = &costMat[0];
 
-  hu.solve(&costMatPtr, n, m, 0, assignment_idx);
+  hu.solve(&costMatPtr, n, m, MODE, assignment_idx);
 
   // dumpmat(n, m, costMat);
 

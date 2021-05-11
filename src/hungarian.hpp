@@ -4,7 +4,6 @@
 #include <vector>
 
 class Hungarian {
-  std::vector<float> lx, ly;
   std::vector<bool> lx_mask, ly_mask;
   std::vector<float> matrix;
   std::vector<bool> mask_matrix;
