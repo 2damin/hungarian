@@ -1,4 +1,4 @@
-# hungarian
+# Hungarian Algorithm
 Hungarian Algorithm 
 
 ## Build
