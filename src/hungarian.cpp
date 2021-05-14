@@ -7,7 +7,6 @@
 
 void Hungarian::init(const float **cost, const int _N, const int _M,
                      const int _MODE) {
-
   N = _N;
   M = _M;
   MODE = _MODE;
@@ -50,15 +49,6 @@ void Hungarian::init(const float **cost, const int _N, const int _M,
         matrix[j + i * M] = (*cost)[j + i * M] * mode_type;
     }
   }
-
-  // #ifdef NDEBUG
-  //   std::cout << "--PRINT RESIZED MATRIX--" << std::endl;
-  //   for (int i = 0; i < max_NM; ++i) {
-  //     for (int j = 0; j < max_NM; ++j)
-  //       std::cout << matrix[j + i * max_NM] << " ";
-  //     std::cout << std::endl;
-  //   }
-  // #endif
 
   // check infinity value
   auto inf = std::numeric_limits<double>::infinity();
@@ -121,10 +111,7 @@ struct cmp {
 bool dfs_zero(int *count, int count_tmp, std::vector<bool> &mask_matrix,
               std::vector<bool> lx_mask, std::vector<bool> ly_mask, const int N,
               const int M) {
-  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>,
-                      cmp>
-      cnts;
-
+  std::priority_queue<std::pair<int, int>, std::vector<std::pair<int, int>>,cmp> cnts;
   int before_cnt = 0;
   std::vector<bool> mask_origin;
   mask_origin.assign(mask_matrix.begin(), mask_matrix.end());
@@ -148,7 +135,7 @@ bool dfs_zero(int *count, int count_tmp, std::vector<bool> &mask_matrix,
   while (!cnts.empty()) {
     auto cnt = cnts.top();
     cnts.pop();
-    // std::cout << cnt.first << " " << cnt.second << std::endl;
+
     if (cnt.second == 0)
       return true;
 
@@ -165,8 +152,7 @@ bool dfs_zero(int *count, int count_tmp, std::vector<bool> &mask_matrix,
         mask_matrix[j + i_idx * M] = 0;
     }
 
-    auto status =
-        dfs_zero(count, count_tmp + 1, mask_matrix, lx_mask, ly_mask, N, M);
+    auto status = dfs_zero(count, count_tmp + 1, mask_matrix, lx_mask, ly_mask, N, M);
     if (status && count_tmp + 1 < N) {
       // minimal counts of lines is smaller than N
       *count = count_tmp + 1;
@@ -193,11 +179,6 @@ int Hungarian::step3() {
   auto status =
       dfs_zero(&count, 0, mask_matrix, lx_mask, ly_mask, max_NM, max_NM);
 
-  // #ifdef DEBUG
-  //   std::cout << "step3" << std::endl;
-  //   std::cout << " Count : " << count << " status : " << status << std::endl;
-  // #endif
-
   if (count != max_NM)
     return 4;
   else
@@ -211,17 +192,6 @@ bool min_comp(float a, float b) {
 }
 
 int Hungarian::step4() {
-
-  // #ifdef DEBUG
-  //   std::cout << "step4" << std::endl;
-  //   std::cout << "--PRINT STEP4--" << std::endl;
-  //   for (int i = 0; i < max_NM; ++i) {
-  //     for (int j = 0; j < max_NM; ++j)
-  //       std::cout << matrix[j + i * max_NM] << " ";
-  //     std::cout << std::endl;
-  //   }
-  // #endif
-
   float delta = *std::max_element(matrix.begin(), matrix.end());
   for (int i = 0; i < max_NM; ++i) {
     for (int j = 0; j < max_NM; ++j) {
@@ -229,34 +199,14 @@ int Hungarian::step4() {
       delta = tmp == 0 ? delta : tmp;
     }
   }
-
-  // #ifdef DEBUG
-  //   for (int i = 0; i < max_NM; ++i)
-  //     std::cout << "xline : " << lx_mask[i] << " ";
-  //   std::cout << std::endl;
-  //   for (int j = 0; j < max_NM; ++j)
-  //     std::cout << "yline : " << ly_mask[j] << " ";
-  //   std::cout << std::endl;
-  //   std::cout << "--------" << std::endl;
-  //   std::cout << "delta : " << delta << std::endl;
-  // #endif
-
+  //subtract delta from each element.
   std::transform(matrix.begin(), matrix.end(), matrix.begin(),
                  [delta](float c) { return c - delta; });
-
+  //add delta to covered element.
   for (int i = 0; i < max_NM; ++i)
     for (int j = 0; j < max_NM; ++j)
       matrix[j + i * max_NM] = std::max(
           0.f, matrix[j + i * max_NM] + delta * (lx_mask[i] + ly_mask[j]));
-
-  // #ifdef DEBUG
-  //   std::cout << "--PRINT STEP4 AFTER--" << std::endl;
-  //   for (int i = 0; i < max_NM; ++i) {
-  //     for (int j = 0; j < max_NM; ++j)
-  //       std::cout << matrix[j + i * max_NM] << " ";
-  //     std::cout << std::endl;
-  //   }
-  // #endif
 
   return 2;
 }
@@ -264,8 +214,7 @@ int Hungarian::step4() {
 bool DFS_step5_columnwise(std::vector<float> &mask_matrix,
                           std::vector<bool> m_mask, const int N, const int M,
                           const int N_idx, std::vector<int> &assignment_idx) {
-  //   std::cout << "m_mask count : "
-  //             << std::count(m_mask.begin(), m_mask.end(), true) << std::endl;
+
   if (N_idx >= N || std::count(m_mask.begin(), m_mask.end(), true) == M)
     return true;
 
@@ -294,8 +243,7 @@ bool DFS_step5_columnwise(std::vector<float> &mask_matrix,
 bool DFS_step5_rowwise(std::vector<float> &mask_matrix,
                        std::vector<bool> n_mask, const int N, const int M,
                        const int M_idx, std::vector<int> &assignment_idx) {
-  //   std::cout << "n_mask count : "
-  //             << std::count(n_mask.begin(), n_mask.end(), true) << std::endl;
+
   if (M_idx >= M || std::count(n_mask.begin(), n_mask.end(), true) == N)
     return true;
 
@@ -323,15 +271,6 @@ bool DFS_step5_rowwise(std::vector<float> &mask_matrix,
 
 int Hungarian::step5(const float **cost, float *score,
                      std::vector<float> *assignment_idx) {
-  // #ifdef DEBUG
-  //   std::cout << "step5" << std::endl;
-  //   std::cout << "--PRINT STEP5 --" << std::endl;
-  //   for (int i = 0; i < max_NM; ++i) {
-  //     for (int j = 0; j < max_NM; ++j)
-  //       std::cout << matrix[j + i * max_NM] << " ";
-  //     std::cout << std::endl;
-  //   }
-  // #endif
 
   // Fill lx_mask and ly_mask with false
   std::transform(lx_mask.begin(), lx_mask.end(), lx_mask.begin(),
